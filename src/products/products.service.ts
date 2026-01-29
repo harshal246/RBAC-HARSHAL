@@ -40,7 +40,7 @@ export class ProductsService {
       const {name,description,price}=updateProductDto
       const [result]=await this.db.query(`UPDATE products1
       SET name = ?, description = ?, price = ?
-      WHERE id = ?`)
+      WHERE id = ?`,[name,description,price,id])
       return result
     }
     catch(err){
@@ -53,7 +53,7 @@ export class ProductsService {
 
   async remove(id: number) {
     try{
-      const [result]=await this.db.query("DELETE FROM prodcuts1 WHERE id=?",[id]) 
+      const [result]=await this.db.query("DELETE FROM products1 WHERE id=?",[id]) 
       return result
     }
     catch(err){
