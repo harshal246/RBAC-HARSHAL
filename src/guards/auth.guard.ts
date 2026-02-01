@@ -45,21 +45,21 @@ export class RoleGuard implements CanActivate {
 
       const token = jwtToken.split(" ")[1];
       const decoded = this.jwtservice.verify(token);
+      console.log(decoded.id,decoded.name,"hey name got")
+      console.log(decoded)
       console.log("User ID:", decoded.id);
       const [result] = (await this.db.query(
-        `SELECT actions FROM permissions 
-         WHERE role_id = ?`,
-        [decoded.id]
+        `select l.action_name from permissions p join actions l on p.actions=l.id where role_id=? and name=?`,
+        [decoded.id,decoded.name]
       )) as any[];
-
+      console.log(result)
       if (!result || result.length === 0) {
         throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
       }
-      const allowedActions = result[0].actions.split(" ");
-      console.log("Allowed Actions:", allowedActions);
+      const allactions=result.map((itm:any)=>itm.action_name)
       console.log("Required Permission:", requiredPermission);
 
-      if (!allowedActions.includes(requiredPermission)) {
+      if (!allactions.includes(requiredPermission)) {
         throw new ForbiddenException(
           `Forbidden: You don't have ${requiredPermission} permission`
         );

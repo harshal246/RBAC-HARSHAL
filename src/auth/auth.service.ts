@@ -32,20 +32,21 @@ export class AuthService {
       const roleId = roles[name] ?? roles["User"];
 
       const actions = Permsisons[roleId] || Permsisons[2]; 
+      const values=actions.map(acts=>[roleId,name,acts])
     
       const [newuser] = await this.db.query(
         "INSERT INTO users (name, email, password, role_id) VALUES (?, ?, ?, ?)",
         [name, email, hashedpassword, roleId]
       ) as [{ affectedRows: number; insertId: number }, any];
-    
       const [permission] = await this.db.query(
-        "INSERT INTO permissions (role_id, name, actions) VALUES (?, ?, ?)",
-        [roleId, name, actions]
+        "INSERT IGNORE INTO permissions (role_id, name, actions) VALUES ?",
+        [values]
       ) as [{ affectedRows: number }, any];
-    
-      if (newuser.affectedRows == 1 && permission.affectedRows == 1) {
+      // console.log(permission,newuser)
+      if (newuser.affectedRows >=1 && permission.affectedRows >= 1) {
         const token = {
           id: roleId,
+          name:name,
           email: email
         };
         return {
@@ -70,13 +71,13 @@ export class AuthService {
           throw new BadRequestException('Email not valid');
         }
         const user = rows[0];
-      
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
           throw new BadRequestException('Wrong password');
         }
         return this.jwtService.sign({
           id: user.role_id,
+          name:user.name,
           email: user.email,
         });
       }

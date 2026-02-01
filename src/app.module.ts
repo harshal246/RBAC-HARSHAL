@@ -3,6 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProductsModule } from './products/products.module';
 import { JwtModule } from '@nestjs/jwt';
+import { AdminControllerModule } from './admin-controller/admin-controller.module';
 @Module({
   imports: [
       ConfigModule.forRoot({
@@ -20,6 +21,7 @@ import { JwtModule } from '@nestjs/jwt';
         }),
       }),
     AuthModule,
-    ProductsModule],
+    ProductsModule,
+    AdminControllerModule],
 })
 export class AppModule {}

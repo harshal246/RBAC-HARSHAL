@@ -5,7 +5,7 @@ interface Roles{
     [key:string]:number
 }
 interface Permsisons{
-    [key:number]:string
+    [key:number]:number[]
 }
 export const roles:Roles={
     "Harshal":1,
@@ -13,7 +13,7 @@ export const roles:Roles={
     "Harshal2":3   
 }
 export const Permsisons:Permsisons = {
-    1: "create_records read_records update_records delete_records",
-    2: "read_records", 
-    3: "read_records update_records" 
+    1: [1,2,3,4],
+    2: [2], 
+    3: [2,3] 
   };
