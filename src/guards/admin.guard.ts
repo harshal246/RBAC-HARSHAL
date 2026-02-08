@@ -19,7 +19,6 @@ export class Adminguard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers.authorization;
-    console.log(authHeader)
     if (!authHeader ||!authHeader.startsWith("Bearer ")) {
       throw new UnauthorizedException("Missing or invalid authorization token");
     }

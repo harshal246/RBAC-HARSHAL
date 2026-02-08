@@ -2,9 +2,10 @@ import { Injectable,Inject ,BadRequestException,ConflictException, InternalServe
 import { RowDataPacket, type Pool } from 'mysql2/promise';
 import { signDto } from './dto/sign.dto';
 import  bcrypt from 'bcrypt';
-import { Permsisons, roles } from './roles';
+import { Permsisons, roles, rolesName } from './roles';
 import { JwtService } from '@nestjs/jwt';
 import { loginDto } from './dto/login.dto';
+import { createSearchParams } from 'react-router-dom';
 @Injectable()
 export class AuthService {
     constructor(
@@ -13,9 +14,9 @@ export class AuthService {
         private jwtService: JwtService
       ) {}
     async signupService(body: signDto) {
-      const { name, email, password } = body;
-    
-      if (!name || !email || !password) {
+      const { name, email, password,role } = body;
+      // console.log(name,email,password)
+      if (!name || !email || !password || !role) {
         throw new BadRequestException('all fields are required');
       }
     
@@ -27,13 +28,18 @@ export class AuthService {
       if (rows.length > 0) {
         throw new ConflictException('Email already exists');
       }
-    
       const hashedpassword = await bcrypt.hash(password, 10);
-      const roleId = roles[name] ?? roles["User"];
-
-      const actions = Permsisons[roleId] || Permsisons[2]; 
-      const values=actions.map(acts=>[roleId,name,acts])
-    
+      // this all things will come from the data base from the roles table
+      const [permissions]=await this.db.query<RowDataPacket[]>("select * from roles where name=?",[role])
+      if (permissions.length<0){
+        throw new Error("No permissions based on that role or that role doesn't exist")
+      }
+      // const roleId = roles[name] ?? roles["User"];
+      
+      const roleId=permissions[0].id
+      const roleName=permissions[0].name
+      const actions = permissions[0].Role_permission.split(",").map((at:string)=>parseInt(at))
+      const values=actions.map((acts:number)=>[roleId,name,acts])
       const [newuser] = await this.db.query(
         "INSERT INTO users (name, email, password, role_id) VALUES (?, ?, ?, ?)",
         [name, email, hashedpassword, roleId]
@@ -45,12 +51,16 @@ export class AuthService {
       // console.log(permission,newuser)
       if (newuser.affectedRows >=1 && permission.affectedRows >= 1) {
         const token = {
-          id: roleId,
+          id: roleId,          
           name:name,
           email: email
         };
         return {
-          "token": this.jwtService.sign(token)
+          "token": this.jwtService.sign(token),
+          "name":name,
+          "role":roleName,
+          "id":roleId,
+          "email":email
         };
       }
     
@@ -64,7 +74,7 @@ export class AuthService {
         }
       
         const [rows] = await this.db.query<RowDataPacket[]>(
-          'SELECT * FROM users WHERE email = ?',
+          'select  users.role_id,roles.name as role,users.name,users.email,users.password from users join roles on users.role_id=roles.id where email=?;',
           [email],
         );
         if (!rows || rows.length === 0) {
@@ -75,11 +85,28 @@ export class AuthService {
         if (!isMatch) {
           throw new BadRequestException('Wrong password');
         }
-        return this.jwtService.sign({
+        const token={
           id: user.role_id,
           name:user.name,
-          email: user.email,
-        });
+          email: user.email, 
+        }
+        // return this.jwtService.sign({"token":token,"name":user.name,"id":user.role_id,"email":user.email});
+        return {
+          "token": this.jwtService.sign(token),
+          "name":user.name,
+          "id":user.roleId,
+          "email":user.email,
+          "role":user.role
+        };
+      }
+      async readRoles(){
+        try{
+          const [rows]=await this.db.query("select name from roles")
+          return rows
+        }
+        catch(err){
+          throw new Error(err)
+        }
       }
 
 }

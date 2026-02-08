@@ -7,6 +7,11 @@ import { loginDto } from "./dto/login.dto";
 @Controller("auth")
 export class AuthController {
   constructor(private authclass: AuthService) {}
+  @Get()
+  read(){
+    return this.authclass.readRoles()
+  }
+
   @Post("login")
   login(@Body() body: loginDto) {
     return this.authclass.loginService(body);
